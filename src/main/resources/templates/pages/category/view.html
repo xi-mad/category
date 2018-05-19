@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>类目视图</title>
+</head>
+<body>
+<script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+<script>
+
+    $(function () {
+        $.ajax({
+            url: '/category/all',
+            type: 'get',
+            success: function (res) {
+                if (res.code === 0) {
+                    var treeArr = [];
+
+                    tree(treeArr, res.data, 0, 0);
+
+                    for (var i = 0; i < treeArr.length; i++) {
+                        var tmpStr = '';
+                        for (var j = 0; j < treeArr[i].level; j++) {
+                            tmpStr += ' |-';
+                        }
+                        if (treeArr[i].leaf === 'yes') {
+                            document.write(tmpStr + '<a href="/category/node/attr?id=' + treeArr[i].id + '">' + treeArr[i].categoryName + '</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="/product/view?id=' + treeArr[i].id + '">商品</a>' + "<br/>");
+                        } else {
+                            document.write(tmpStr + treeArr[i].categoryName + "<br/>");
+                        }
+                    }
+                } else {
+                    alert(res.msg);
+                }
+            }
+        });
+
+    });
+
+    function tree(treeArr, arr, pid, level) {
+        for (var i = 0; i < arr.length; i++) {
+            if (arr[i].parentId === pid) {
+                arr[i].level = level;
+                treeArr.push(arr[i]);
+                tree(treeArr, arr, arr[i].id, level + 1);
+            }
+        }
+    }
+
+</script>
+</body>
+</html>

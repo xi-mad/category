@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>属性</title>
+    <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" crossorigin="anonymous">
+    <link href="https://cdn.bootcss.com/bootstrap-table/1.11.0/bootstrap-table.min.css" rel="stylesheet">
+</head>
+<body>
+
+<div class="panel-body">
+    <div class="col-sm-4">
+        <div class="panel panel-default" style="min-height: 768px">
+            <div class="panel-body">
+                <h2 id="category"></h2>
+                <h3>添加属性</h3>
+                <p>“默认值”长度限制为500，其他文本框长度限制为50。</p>
+                <div class="form-horizontal">
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label" for="displayName">展示名称</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="displayName">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label" for="fieldName">字段名称</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="fieldName">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label" for="valueType">值类型</label>
+                        <div class="col-sm-8">
+                            <select class="form-control" id="valueType"></select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label" for="valueLength">值长度</label>
+                        <div class="col-sm-8">
+                            <input type="number" class="form-control" id="valueLength">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label" for="inputType">输入类型</label>
+                        <div class="col-sm-8">
+                            <select class="form-control" id="inputType"></select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label" for="defaultValue">默认值</label>
+                        <div class="col-sm-8">
+                            <textarea class="form-control" id="defaultValue"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label" for="useDefault">是否使用默认值校验</label>
+                        <div class="col-sm-8">
+                            <select class="form-control" id="useDefault"></select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label" for="isRequired">是否必填</label>
+                        <div class="col-sm-8">
+                            <select class="form-control" id="isRequired"></select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label" for="isShow">是否显示</label>
+                        <div class="col-sm-8">
+                            <select class="form-control" id="isShow"></select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label" for="orders">排序值</label>
+                        <div class="col-sm-8">
+                            <input type="number" class="form-control" id="orders">
+                        </div>
+                    </div>
+
+                    <button id="add" class="btn btn-default" style="float: right">确认添加</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-8">
+        <div class="panel panel-default"  style="min-height: 768px">
+            <div class="panel-body">
+                <h3>已有属性</h3>
+                <table id="table"></table>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://cdn.bootcss.com/bootstrap-table/1.11.0/bootstrap-table.min.js"></script>
+<script src="https://cdn.bootcss.com/bootstrap-table/1.11.0/locale/bootstrap-table-zh-CN.min.js"></script>
+<script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js" crossorigin="anonymous"></script>
+<script src="/static/js/util.js"></script>
+<script src="/static/js/table.js"></script>
+<script>
+    $(function () {
+        var id = getQueryString('id');
+
+        var data = new Data(id);
+        data.init();
+
+        var table = $('#table');
+        var tableData = new TableData(table, id);
+        tableData.init();
+
+        var buttonGroup = new ButtonGroup(tableData, id);
+        buttonGroup.init();
+
+    });
+
+    var Data = function (id) {
+        var object = {};
+
+        object.init = function () {
+            sendGetAjax('/category/get?id=' + id, function (res) {
+                 $('#category').text('类目: ' + res.data.categoryName);
+            });
+
+            sendGetAjax('/enum/input/type', function (res) {
+                $.each(res.data, function (k, v) {
+                    $('#inputType').append('<option value="' + k + '" >' + v + '</option>');
+                });
+            }, '#add');
+
+            sendGetAjax('/enum/value/type', function (res) {
+                $.each(res.data, function (k, v) {
+                    $('#valueType').append('<option value="' + k + '" >' + v + '</option>');
+                });
+            }, '#add');
+
+            sendGetAjax('/enum/required', function (res) {
+                $.each(res.data, function (k, v) {
+                    $('#isRequired').append('<option value="' + k + '" >' + v + '</option>');
+                    $('#isRequired').val('yes');
+                });
+            }, '#add');
+            sendGetAjax('/enum/show', function (res) {
+                $.each(res.data, function (k, v) {
+                    $('#isShow').append('<option value="' + k + '" >' + v + '</option>');
+                    $('#isShow').val('yes');
+                });
+            }, '#add');
+
+            sendGetAjax('/enum/use/default', function (res) {
+                $.each(res.data, function (k, v) {
+                    $('#useDefault').append('<option value="' + k + '" >' + v + '</option>');
+                    $('#useDefault').val('yes');
+                });
+            }, '#add');
+        };
+
+        return object;
+    };
+
+    var TableData = function (table, id) {
+        var object = {};
+
+        object.init = function () {
+            tableInit({
+                table: table,
+                url: '/property/category?id=' + id,
+                sidePagination: 'client',
+                columns: object.columns,
+                height: 700
+            });
+        };
+
+        object.columns = [{
+            field: 'displayName',
+            title: '展示名称'
+        }, {
+            field: 'fieldName',
+            title: '字段名称'
+        }, {
+            field: 'valueType',
+            title: '值类型'
+        }, {
+            field: 'valueLength',
+            title: '值长度'
+        }, {
+            field: 'inputType',
+            title: '输入类型'
+        }, {
+            field: 'defaultValue',
+            title: '默认值'
+        }, {
+            field: 'isRequired',
+            title: '是否必填'
+        }, {
+            field: 'isShow',
+            title: '是否显示'
+        }, {
+            field: 'orders',
+            title: '排序值'
+        }];
+
+        object.refresh = function () {
+            tableRefresh({table: table});
+        };
+
+        return object;
+    };
+
+    var ButtonGroup = function (table, id) {
+        var object = {};
+
+        object.init = function () {
+            $('#add').click(function () {
+                sendPostAjax('/property/add', {
+                    categoryId: id,
+                    displayName: $('#displayName').val(),
+                    fieldName: $('#fieldName').val(),
+                    valueType: $('#valueType').val(),
+                    valueLength: $('#valueLength').val(),
+                    inputType: $('#inputType').val(),
+                    defaultValue: $('#defaultValue').val(),
+                    useDefault: $('#useDefault').val(),
+                    isRequired: $('#isRequired').val(),
+                    isShow: $('#isShow').val(),
+                    orders: $('#orders').val()
+                }, function (res) {
+                    table.refresh();
+                }, '#add');
+            });
+        };
+
+        return object;
+    };
+
+</script>
+</body>
+</html>

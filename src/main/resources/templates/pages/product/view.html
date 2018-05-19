@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>商品</title>
+    <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" crossorigin="anonymous">
+    <link href="https://cdn.bootcss.com/bootstrap-table/1.11.0/bootstrap-table.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="panel-body">
+    <div class="col-sm-3">
+        <div class="panel panel-default" style="min-height: 768px">
+            <div class="panel-body">
+                <h2 id="category"></h2>
+                <h3>商品</h3>
+                <div>
+                    <table>
+                        <tr>
+                            <td align="right">
+                                <span style='color:red'>*</span>商品名称：
+                            </td>
+                            <td>
+                                <input type="text" id="productName" />
+                            </td>
+                        </tr>
+                        <tbody id="tableBody">
+                        </tbody>
+                        <tr>
+                            <td>
+                            </td>
+                            <td>
+                                <input type="button" value="提交" id="add" name="add" />
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-9">
+        <div class="panel panel-default"  style="min-height: 768px">
+            <div class="panel-body">
+                <h3>已有商品</h3>
+                <table id="table"></table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://cdn.bootcss.com/bootstrap-table/1.11.0/bootstrap-table.min.js"></script>
+<script src="https://cdn.bootcss.com/bootstrap-table/1.11.0/locale/bootstrap-table-zh-CN.min.js"></script>
+<script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js" crossorigin="anonymous"></script>
+<script src="/static/js/util.js"></script>
+<script src="/static/js/table.js"></script>
+<script type="text/javascript">
+
+    $(function () {
+        var id = getQueryString('id');
+        var tableBody = $('#tableBody');
+
+        var data = new Data(id, tableBody);
+        data.init();
+
+        var table = $('#table');
+        var tableData = new TableData(table, data, id);
+        tableData.init();
+
+        var buttonGroup = new ButtonGroup(tableData, data, id);
+        buttonGroup.init();
+
+    });
+
+    var Data = function (id, tableBody) {
+        var object = {};
+
+        object.inputType = {};
+
+        object.ids = {};
+        object.checkboxs = {};
+        object.radios = {};
+
+        object.columns = [];
+
+        object.init = function () {
+            sendGetAjax('/category/get?id=' + id, function (res) {
+                $('#category').text('类目: ' + res.data.categoryName);
+            });
+
+            sendSyncGetAjax('/enum/input/type', function (res) {
+                object.inputType = res.data;
+            });
+
+            sendSyncGetAjax('/property/category?id=' + id, function (res) {
+                object.columns.push({
+                    'field': 'name',
+                    'title': '名称'
+                });
+                var _html = '';
+                $.each(res.data, function (index, elem) {
+                    _html += object.handler(index, elem);
+                    object.columns.push({
+                        'field': elem.id,
+                        'title': elem.displayName
+                    });
+                });
+                tableBody.html(_html);
+            });
+        };
+
+        object.handler = function (index, elem) {
+            var _id = elem.id;
+            var _displayName = elem.displayName;
+            var _fieldName = elem.fieldName;
+            var _inputType = elem.inputType;
+            var _isRequired = elem.isRequired;
+            var _defaultValue = elem.defaultValue;
+            var _valueLength = elem.valueLength;
+            var _valueType = elem.valueType;
+            var _splitArr; //以“,”分割数组
+            var _displayArr; //展示给用户看的字体
+            var _valueArr; //隐藏的value值
+            var _displayValue; //选中的值
+            var _displayValueArr; //选中值的数组
+            var j, k;
+            var _html = "<tr><td align='right'>" + (_isRequired === "yes" ? "<span style='color:red'>*</span>" : '') + _displayName + "：</td><td align='left'>";
+            switch (_inputType) {
+                case 'checkbox':
+                    object.checkboxs[_id] = _fieldName;
+                    _splitArr = _defaultValue.split(',');
+                    if (_splitArr.length < 2) {
+                        alert("checkbox[" + _displayName + "]默认值设置有误!");
+                        break;
+                    }
+                    _displayArr = _splitArr[0].split('|');
+                    _valueArr = _splitArr[1].split('|');
+                    if (_displayArr.length !== _valueArr.length) {
+                        alert("checkbox[" + _displayName + "]默认值设置有误!");
+                        break;
+                    }
+                    if (_splitArr.length === 3) {
+                        _displayValue = _splitArr[2];
+                    }
+                    _displayValueArr = _displayValue.split('|');
+                    for (j = 0; j < _displayArr.length; j++) {
+                        var _checked = false;
+                        for (k = 0; k < _displayValueArr.length; k++) {
+                            if (_displayValueArr[k] === _valueArr[j]) {
+                                _checked = true;
+                            }
+                        }
+                        _html += "<input type='checkbox' " + (_checked ? "checked" : '') + " value='" + _valueArr[j] + "' name='" + _fieldName + "' id='" + _fieldName + "_" + j + "' dataType='" + _valueType + "' isRequired='" + _isRequired + "' maxLength='" + _valueLength + "' label='" + _displayName + "'/><label for='" + _fieldName + "_" + j + "'>" + _displayArr[j] + "</label>"
+                    }
+                    break;
+                case 'radio':
+                    object.radios[_id] = _fieldName;
+                    _splitArr = _defaultValue.split(',');
+                    if (_splitArr.length < 2) {
+                        alert("radio[" + _displayName + "]默认值设置有误!");
+                        break;
+                    }
+                    _displayArr = _splitArr[0].split('|');
+                    _valueArr = _splitArr[1].split('|');
+                    if (_displayArr.length !== _valueArr.length) {
+                        alert("radio[" + _displayName + "]默认值设置有误!");
+                        break;
+                    }
+                    if (_splitArr.length === 3) {
+                        _displayValue = _splitArr[2];
+                    }
+                    for (j = 0; j < _displayArr.length; j++) {
+                        _html += "<input type='radio' " + (_displayValue === _valueArr[j] ? "checked" : '') + " value='" + _valueArr[j] + "' name='" + _fieldName + "' id='" + _fieldName + "_" + j + "' dataType='" + _valueType + "' isRequired='" + _isRequired + "' maxLength='" + _valueLength + "' label='" + _displayName + "' /><label for='" + _fieldName + "_" + j + "'>" + _displayArr[j] + "</label>"
+                    }
+                    break;
+                case 'select':
+                    object.ids[_id] = _fieldName;
+                    _splitArr = _defaultValue.split(',');
+                    if (_splitArr.length < 2) {
+                        alert("select[" + _displayName + "]默认值设置有误!");
+                        break;
+                    }
+                    _displayArr = _splitArr[0].split('|');
+                    _valueArr = _splitArr[1].split('|');
+                    if (_displayArr.length !== _valueArr.length) {
+                        alert("select[" + _displayName + "]默认值设置有误!");
+                        break;
+                    }
+                    if (_splitArr.length === 3) {
+                        _displayValue = _splitArr[2];
+                    }
+                    _html += "<select name='" + _fieldName + "' id='" + _fieldName + "' dataType='" + _valueType + "' isRequired='" + _isRequired + "' maxLength='" + _valueLength + "' label='" + _displayName + "'>"
+                    for (j = 0; j < _displayArr.length; j++) {
+                        _html += "<option " + (_displayValue === _valueArr[j] ? "selected" : '') + " value='" + _valueArr[j] + "'>" + _displayArr[j] + "</option>";
+                    }
+                    _html += "</select>";
+                    break;
+                case 'text':
+                    object.ids[_id] = _fieldName;
+                    _html += "<input type='text' id='" + _fieldName + "' name='" + _fieldName + "' value='" + _defaultValue + "' dataType='" + _valueType + "' isRequired='" + _isRequired + "' maxLength='" + _valueLength + "' label='" + _displayName + "'/>";
+                    break;
+                case 'textarea':
+                    object.ids[_id] = _fieldName;
+                    _html += "<textarea rows='4' cols='30' id='" + _fieldName + "' name='" + _fieldName + "' dataType='" + _valueType + "' isRequired='" + _isRequired + "' maxLength='" + _valueLength + "' label='" + _displayName + "'>" + _defaultValue + "</textarea>";
+                    break;
+                default:
+                    break;
+            }
+            _html += "</td></tr>";
+            return _html;
+        };
+
+        return object;
+    };
+
+    var TableData = function (table, data, id) {
+        var object = {};
+
+        object.init = function () {
+            tableInit({
+                table: table,
+                url: '/product/category?id=' + id,
+                sidePagination: 'client',
+                columns: data.columns,
+                height: 700,
+                responseHandler: object.responseHandler
+            });
+        };
+
+        object.responseHandler = function (res) {
+            var result = {};
+            result['code'] = res.code;
+            result['msg'] = res.msg;
+            result['total'] = res.total;
+            result.data = [];
+
+            $.each(res.data, function (index, elem) {
+                var temp = {};
+                temp.name = elem.name;
+                var other = JSON.parse(elem.append);
+                $.extend(temp, other);
+                result.data.push(temp);
+            });
+            return result;
+        };
+
+        object.refresh = function () {
+            tableRefresh({table: table});
+        };
+
+        return object;
+    };
+
+    var ButtonGroup = function (table, data, id) {
+        var object = {};
+
+        object.init = function () {
+            $('#add').click(function () {
+                var arrays = {};
+
+                for (var _id in data.ids) {
+                    arrays[_id] = $('#' + data.ids[_id]).val();
+                }
+
+                for (var radio in data.radios) {
+                    var radioName = data.radios[radio];
+                    arrays[radio] = $('input[name="' + radioName + '"]:checked').val();
+                }
+
+                for (var checkbox in data.checkboxs) {
+                    var checkboxName = data.checkboxs[checkbox];
+                    var checkboxArr = $('input[name="' + checkboxName + '"]:checked');
+                    var arrs = '';
+                    for (var i = 0; i < checkboxArr.length; i++) {
+                        if (arrs.length > 0) {
+                            arrs += '|';
+                        }
+                        arrs += checkboxArr[i].value;
+                    }
+                    arrays[checkbox] = arrs;
+                }
+
+                sendPostAjax('/product/add', {
+                    categoryId: id,
+                    name: $('#productName').val(),
+                    append: JSON.stringify(arrays)
+                }, function (res) {
+                    table.refresh();
+                }, '#add');
+
+            });
+        };
+
+        return object;
+    };
+
+
+</script>
+</body>
+</html>

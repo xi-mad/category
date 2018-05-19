@@ -1,0 +1,16 @@
+spring:
+  datasource:
+    driver-class-name: org.gjt.mm.mysql.Driver
+    url: jdbc:mysql://127.0.0.1:3306/category?useUnicode=true&characterEncoding=UTF-8
+    username: root
+    password: 123456
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: LEGACYHTML5
+    cache: false
+  mvc:
+    static-path-pattern: /static/**
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
